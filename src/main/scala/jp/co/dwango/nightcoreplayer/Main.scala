@@ -8,13 +8,13 @@ import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.cell.PropertyValueFactory
-import javafx.scene.control.{Label, TableColumn, TableView}
-import javafx.scene.input.{DragEvent, TransferMode}
+import javafx.scene.control.{Label, TableColumn, TableRow, TableView}
+import javafx.scene.input.{DragEvent, MouseEvent, TransferMode}
 import javafx.scene.layout.{BorderPane, HBox}
 import javafx.scene.media.{Media, MediaPlayer, MediaView}
 import javafx.scene.paint.Color
 import javafx.stage.Stage
-import javafx.util.Duration
+import javafx.util.{Callback, Duration}
 
 object Main extends App:
   Application.launch(classOf[Main], args: _*)
@@ -27,23 +27,9 @@ class Main extends Application:
   private[this] val tableMinWidth = 300
 
   override def start(primaryStage: Stage): Unit =
-    val path = "/Users/soichiro_yoshimura/Movies/video.mp4"
-    val media = Media(File(path).toURI.toString)
-    val mediaPlayer = MediaPlayer(media)
+    val mediaView = new MediaView()
+
     val timeLabel = Label()
-    mediaPlayer.setOnReady(new Runnable(){
-      override def run(): Unit =
-        mediaPlayer.setRate(1.25)
-        timeLabel.setText(formatTime(mediaPlayer.getCurrentTime, mediaPlayer.getTotalDuration))
-    })
-    mediaPlayer.play()
-    val mediaView = MediaView(mediaPlayer)
-
-    mediaPlayer.currentTimeProperty().addListener(new ChangeListener[Duration] {
-      override def changed(observable: ObservableValue[_ <: Duration], oldValue: Duration, newValue: Duration): Unit =
-        timeLabel.setText(formatTime(mediaPlayer.getCurrentTime, mediaPlayer.getTotalDuration))
-    })
-
     timeLabel.setText("00:00:00/00:00:00")
       timeLabel.setTextFill(Color.WHITE)
       val toolBar = HBox(timeLabel)
@@ -51,11 +37,23 @@ class Main extends Application:
       toolBar.setAlignment(Pos.CENTER)
       toolBar.setStyle("-fx-background-color: Black")
 
-
       val tableView = new TableView[Movie]()
       tableView.setMinWidth(tableMinWidth)
       val movies = FXCollections.observableArrayList[Movie]()
       tableView.setItems(movies)
+      tableView.setRowFactory(new Callback[TableView[Movie], TableRow[Movie]]() {
+        override def call(param: TableView[Movie]): TableRow[Movie] = {
+          val row = new TableRow[Movie]()
+          row.setOnMouseClicked(new EventHandler[MouseEvent]() {
+            override def handle(event: MouseEvent): Unit = {
+              if (event.getClickCount >= 1 && !row.isEmpty) {
+                playMovie(row.getItem, mediaView, timeLabel)
+              }
+            }
+          })
+          row
+        }
+      })
 
       val fileNameColumn = new TableColumn[Movie, String]("ファイル名")
       fileNameColumn.setCellValueFactory(new PropertyValueFactory("fileName"))
@@ -111,6 +109,28 @@ class Main extends Application:
 
       primaryStage.setScene(scene)
       primaryStage.show()
+
+  private[this] def playMovie(movie: Movie, mediaView: MediaView, timeLabel: Label): Unit = {
+    if (mediaView.getMediaPlayer != null) {
+      val oldPlayer = mediaView.getMediaPlayer
+      oldPlayer.stop()
+      oldPlayer.dispose()
+    }
+
+    val mediaPlayer = new MediaPlayer(movie.getMedia)
+    mediaPlayer.currentTimeProperty().addListener(new ChangeListener[Duration] {
+      override def changed(observable: ObservableValue[_ <: Duration], oldValue: Duration, newValue: Duration): Unit =
+        timeLabel.setText(formatTime(mediaPlayer.getCurrentTime, mediaPlayer.getTotalDuration))
+    })
+    mediaPlayer.setOnReady(new Runnable() {
+      override def run(): Unit =
+        mediaPlayer.setRate(1.25)
+        timeLabel.setText(formatTime(mediaPlayer.getCurrentTime, mediaPlayer.getTotalDuration))
+    })
+
+    mediaView.setMediaPlayer(mediaPlayer)
+    mediaPlayer.play()
+  }
 
   private[this] def formatTime(elapsed: Duration): String =
     "%02d:%02d:%02d".format(
