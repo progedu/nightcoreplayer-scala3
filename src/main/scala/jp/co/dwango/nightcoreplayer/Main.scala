@@ -194,8 +194,26 @@ class Main extends Application:
         lastButton.setStyle("-fx-background-color: Black")
     })
 
+    // fullscreen button
+    val fullscreenButtonImage = Image(getClass.getResourceAsStream("icon/fullscreen.png"))
+    val fullscreenButton = Button()
+    fullscreenButton.setGraphic(ImageView(fullscreenButtonImage))
+    fullscreenButton.setStyle("-fx-background-color: Black")
+    fullscreenButton.setOnAction(new EventHandler[ActionEvent]() {
+      override def handle(event: ActionEvent): Unit =
+        primaryStage.setFullScreen(true)
+    })
+    fullscreenButton.addEventHandler(MouseEvent.MOUSE_ENTERED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        fullscreenButton.setStyle("-fx-body-color: Black")
+    })
+    fullscreenButton.addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        fullscreenButton.setStyle("-fx-background-color: Black")
+    })
+
     toolBar.getChildren.addAll(
-      firstButton, backButton, playButton, pauseButton, forwardButton, lastButton, timeLabel)
+      firstButton, backButton, playButton, pauseButton, forwardButton, lastButton, fullscreenButton, timeLabel)
 
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
