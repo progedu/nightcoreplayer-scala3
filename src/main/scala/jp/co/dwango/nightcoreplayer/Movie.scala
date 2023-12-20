@@ -6,29 +6,29 @@ class Movie:
 
   private var id: Long = _
 
+  private var fileName: String = _
+
+  private var time: String = _
+
+  private var filePath: String = _
+
+  private var media: Media = _
+
   def setId(id: Long): Unit = this.id = id
 
   def getId: Long = this.id
-
-  private var fileName: String = _
 
   def setFileName(fileName: String): Unit = this.fileName = fileName
 
   def getFileName: String = this.fileName
 
-  private var time: String = _
-
   def setTime(time: String): Unit = this.time = time
 
   def getTime: String = this.time
 
-  private var filePath: String = _
-
   def setFilePath(filePath: String): Unit = this.filePath = filePath
 
   def getFilePath: String = this.filePath
-
-  private var media: Media = _
 
   def setMedia(media: Media): Unit = this.media = media
 
