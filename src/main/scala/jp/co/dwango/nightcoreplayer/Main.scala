@@ -8,10 +8,11 @@ import javafx.event.{ActionEvent, EventHandler}
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.cell.PropertyValueFactory
-import javafx.scene.control._
+import javafx.scene.control.*
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.input.{DragEvent, MouseEvent, TransferMode}
 import javafx.scene.layout.{BorderPane, HBox}
+import javafx.scene.media.MediaPlayer.Status
 import javafx.scene.media.{Media, MediaPlayer, MediaView}
 import javafx.scene.paint.Color
 import javafx.stage.Stage
@@ -33,7 +34,7 @@ class Main extends Application:
     val timeLabel = Label()
     timeLabel.setText("00:00:00/00:00:00")
     timeLabel.setTextFill(Color.WHITE)
-    val toolBar = HBox(timeLabel)
+    val toolBar = new HBox()
     toolBar.setMinHeight(toolBarMinHeight)
     toolBar.setAlignment(Pos.CENTER)
     toolBar.setStyle("-fx-background-color: Black")
@@ -68,10 +69,51 @@ class Main extends Application:
     deleteActionColumn.setPrefWidth(60)
     deleteActionColumn.setCellFactory(new Callback[TableColumn[Movie, Long], TableCell[Movie, Long]]() {
       override def call(param: TableColumn[Movie, Long]): TableCell[Movie, Long] =
-        new DeleteCell(movies, mediaView, tableView)
+        DeleteCell(movies, mediaView, tableView)
     })
 
     tableView.getColumns.setAll(fileNameColumn, timeColumn, deleteActionColumn)
+
+    // play button
+    val playButtonImage = Image(getClass.getResourceAsStream("icon/play.png"))
+    val playButton = Button()
+    playButton.setGraphic(ImageView(playButtonImage))
+    playButton.setStyle("-fx-background-color: Black")
+    playButton.setOnAction(new EventHandler[ActionEvent]() {
+      override def handle(event: ActionEvent): Unit =
+        val selectionModel = tableView.getSelectionModel
+        if (mediaView.getMediaPlayer != null && !selectionModel.isEmpty)
+          val movie = selectionModel.getSelectedItem
+          playMovie(movie, tableView, mediaView, timeLabel)
+    })
+    playButton.addEventHandler(MouseEvent.MOUSE_ENTERED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        playButton.setStyle("-fx-body-color: Black")
+    })
+    playButton.addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        playButton.setStyle("-fx-background-color: Black")
+    })
+
+    // pause button
+    val pauseButtonImage = Image(getClass.getResourceAsStream("icon/pause.png"))
+    val pauseButton = Button()
+    pauseButton.setGraphic(ImageView(pauseButtonImage))
+    pauseButton.setStyle("-fx-background-color: Black")
+    pauseButton.setOnAction(new EventHandler[ActionEvent]() {
+      override def handle(event: ActionEvent): Unit =
+        if (mediaView.getMediaPlayer != null) mediaView.getMediaPlayer.pause()
+    })
+    pauseButton.addEventHandler(MouseEvent.MOUSE_ENTERED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        pauseButton.setStyle("-fx-body-color: Black")
+    })
+    pauseButton.addEventHandler(MouseEvent.MOUSE_EXITED, new EventHandler[MouseEvent]() {
+      override def handle(event: MouseEvent): Unit =
+        pauseButton.setStyle("-fx-background-color: Black")
+    })
+
+    toolBar.getChildren.addAll(playButton, pauseButton, timeLabel)
 
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
@@ -125,8 +167,10 @@ class Main extends Application:
     primaryStage.show()
 
   private[this] def playMovie(movie: Movie,tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
+    var oldCurrentDuration: Option[Duration] = None
     if (mediaView.getMediaPlayer != null) {
       val oldPlayer = mediaView.getMediaPlayer
+      oldCurrentDuration = Some(oldPlayer.getCurrentTime)
       oldPlayer.stop()
       oldPlayer.dispose()
     }
@@ -145,6 +189,7 @@ class Main extends Application:
         timeLabel.setText(formatTime(mediaPlayer.getCurrentTime, mediaPlayer.getTotalDuration))
     })
 
+    oldCurrentDuration.tapEach(d => mediaPlayer.setStartTime(d))
     mediaView.setMediaPlayer(mediaPlayer)
     mediaPlayer.play()
 
