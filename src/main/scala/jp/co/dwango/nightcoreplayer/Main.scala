@@ -2,8 +2,10 @@ package jp.co.dwango.nightcoreplayer
 
 import java.io.File
 import javafx.application.Application
+import javafx.geometry.Pos
 import javafx.scene.Scene
-import javafx.scene.layout.BorderPane
+import javafx.scene.control.Label
+import javafx.scene.layout.{BorderPane, HBox}
 import javafx.scene.media.{Media, MediaPlayer, MediaView}
 import javafx.scene.paint.Color
 import javafx.stage.Stage
@@ -22,9 +24,18 @@ class Main extends Application:
     })
     mediaPlayer.play()
     val mediaView = MediaView(mediaPlayer)
+    mediaView.setFitWidth(800)
+    mediaView.setFitHeight(450)
+    val timeLabel = Label()
+    timeLabel.setText("00:00:00/00:00:00")
+    timeLabel.setTextFill(Color.WHITE)
+    val toolBar = HBox(timeLabel)
+    toolBar.setAlignment(Pos.CENTER)
+    toolBar.setStyle("-fx-background-color: Black")
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
     baseBorderPane.setCenter(mediaView)
+    baseBorderPane.setBottom(toolBar)
     val scene = Scene(baseBorderPane, 800, 500)
     scene.setFill(Color.BLACK)
     primaryStage.setScene(scene)
