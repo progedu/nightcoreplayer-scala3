@@ -17,6 +17,10 @@ object Main extends App:
 
 class Main extends Application:
 
+  private[this] val mediaViewFitWidth = 800
+  private[this] val mediaViewFitHeight = 450
+  private[this] val toolBarMinHeight = 50
+
   override def start(primaryStage: Stage): Unit =
     val path = "/Users/soichiro_yoshimura/Movies/video.mp4"
     val media = Media(File(path).toURI.toString)
@@ -29,8 +33,6 @@ class Main extends Application:
     })
     mediaPlayer.play()
     val mediaView = MediaView(mediaPlayer)
-    mediaView.setFitWidth(800)
-    mediaView.setFitHeight(450)
 
     mediaPlayer.currentTimeProperty().addListener(new ChangeListener[Duration] {
       override def changed(observable: ObservableValue[_ <: Duration], oldValue: Duration, newValue: Duration): Unit =
@@ -40,14 +42,17 @@ class Main extends Application:
     timeLabel.setText("00:00:00/00:00:00")
     timeLabel.setTextFill(Color.WHITE)
     val toolBar = HBox(timeLabel)
+    toolBar.setMinHeight(toolBarMinHeight)
     toolBar.setAlignment(Pos.CENTER)
     toolBar.setStyle("-fx-background-color: Black")
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
     baseBorderPane.setCenter(mediaView)
     baseBorderPane.setBottom(toolBar)
-    val scene = Scene(baseBorderPane, 800, 500)
+    val scene = Scene(baseBorderPane, mediaViewFitWidth, mediaViewFitHeight + toolBarMinHeight)
     scene.setFill(Color.BLACK)
+    mediaView.fitWidthProperty().bind(scene.widthProperty())
+    mediaView.fitHeightProperty().bind(scene.heightProperty().subtract(toolBarMinHeight))
     primaryStage.setScene(scene)
     primaryStage.show()
 
