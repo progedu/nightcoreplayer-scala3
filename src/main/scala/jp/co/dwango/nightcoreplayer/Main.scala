@@ -4,13 +4,14 @@ import java.io.File
 import javafx.application.Application
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.collections.FXCollections
+import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Scene
-import javafx.scene.control.Label
 import javafx.scene.control.cell.PropertyValueFactory
 import javafx.scene.control.{Label, TableColumn, TableView}
 import javafx.scene.layout.{BorderPane, HBox}
 import javafx.scene.media.{Media, MediaPlayer, MediaView}
+import javafx.scene.input.{DragEvent, TransferMode}
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.Duration
@@ -64,9 +65,6 @@ class Main extends Application:
 
     tableView.getColumns.setAll(fileNameColumn, timeColumn)
 
-    // TODO 後で消す
-    movies.addAll(Movie(1L, "movie.mp4", "00:00:00", "./movie.mp4", null))
-
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
     baseBorderPane.setCenter(mediaView)
@@ -76,14 +74,46 @@ class Main extends Application:
     scene.setFill(Color.BLACK)
     mediaView.fitWidthProperty().bind(scene.widthProperty().subtract(tableMinWidth))
     mediaView.fitHeightProperty().bind(scene.heightProperty().subtract(toolBarMinHeight))
+
+    scene.setOnDragOver(new EventHandler[DragEvent]() {
+      override def handle(event: DragEvent): Unit =
+        if (event.getGestureSource != scene &&
+          event.getDragboard.hasFiles) {
+          event.acceptTransferModes(TransferMode.COPY_OR_MOVE: _*)
+        }
+        event.consume()
+    })
+
+    scene.setOnDragDropped(new EventHandler[DragEvent]() {
+      override def handle(event: DragEvent): Unit =
+        val db = event.getDragboard
+        if (db.hasFiles) {
+          db.getFiles.toArray(Array[File]()).toSeq.foreach { f =>
+            val filePath = f.getAbsolutePath
+            val fileName = f.getName
+            val media = Media(f.toURI.toString)
+            val time = formatTime(media.getDuration)
+
+            val movie = Movie(System.currentTimeMillis(), fileName, time, filePath, media)
+            while (movies.contains(movie)) {
+              movie.setId(movie.getId + 1L)
+            }
+            movies.add(movie)
+          }
+        }
+        event.consume()
+    })
+
+    primaryStage.setTitle("mp4ファイルをドラッグ&ドロップしてください")
+
     primaryStage.setScene(scene)
     primaryStage.show()
 
-private[this] def formatTime(elapsed: Duration, duration: Duration): String =
-  "%02d:%02d:%02d/%02d:%02d:%02d".format(
-    elapsed.toHours.toInt,
-    elapsed.toMinutes.toInt % 60,
-    elapsed.toSeconds.toInt % 60,
+  private[this] def formatTime(duration: Duration): String =
+  "%02d:%02d:%02d".format(
     duration.toHours.toInt,
     duration.toMinutes.toInt % 60,
     duration.toSeconds.toInt % 60)
+
+  private[this] def formatTime(elapsed: Duration, duration: Duration): String =
+      s"${formatTime(elapsed)}/${formatTime(duration)}"
