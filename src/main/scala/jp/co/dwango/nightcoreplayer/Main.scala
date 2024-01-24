@@ -234,12 +234,6 @@ class Main extends Application:
     mediaView.setMediaPlayer(mediaPlayer)
     mediaPlayer.play()
 
-  private[this] def formatTime(duration: Duration): String =
-  "%02d:%02d:%02d".format(
-    duration.toHours.toInt,
-    duration.toMinutes.toInt % 60,
-    duration.toSeconds.toInt % 60)
-
   private[this] def playNext(tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
     val selectionModel = tableView.getSelectionModel
     if (selectionModel.isEmpty) return
@@ -248,6 +242,12 @@ class Main extends Application:
     selectionModel.select(nextIndex)
     val movie = selectionModel.getSelectedItem
     playMovie(movie, tableView, mediaView, timeLabel)
+
+  private[this] def formatTime(duration: Duration): String =
+  "%02d:%02d:%02d".format(
+    duration.toHours.toInt,
+    duration.toMinutes.toInt % 60,
+    duration.toSeconds.toInt % 60)
 
   private[this] def formatTime(elapsed: Duration, duration: Duration): String =
       s"${formatTime(elapsed)}/${formatTime(duration)}"
