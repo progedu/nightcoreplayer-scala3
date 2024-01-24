@@ -8,7 +8,7 @@ import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.cell.PropertyValueFactory
-import javafx.scene.control.{Label, TableColumn, TableRow, TableView}
+import javafx.scene.control._
 import javafx.scene.layout.{BorderPane, HBox}
 import javafx.scene.media.{Media, MediaPlayer, MediaView}
 import javafx.scene.input.{DragEvent, MouseEvent, TransferMode}
@@ -61,8 +61,15 @@ class Main extends Application:
     val timeColumn = TableColumn[Movie, String]("時間")
     timeColumn.setCellValueFactory(PropertyValueFactory("time"))
     timeColumn.setPrefWidth(80)
+    val deleteActionColumn = TableColumn[Movie, Long]("削除")
+    deleteActionColumn.setCellValueFactory(PropertyValueFactory("id"))
+    deleteActionColumn.setPrefWidth(60)
+    deleteActionColumn.setCellFactory(new Callback[TableColumn[Movie, Long], TableCell[Movie, Long]]() {
+      override def call(param: TableColumn[Movie, Long]): TableCell[Movie, Long] =
+        new DeleteCell(movies, mediaView, tableView)
+    })
 
-    tableView.getColumns.setAll(fileNameColumn, timeColumn)
+    tableView.getColumns.setAll(fileNameColumn, timeColumn, deleteActionColumn)
 
     val baseBorderPane = BorderPane()
     baseBorderPane.setStyle("-fx-background-color: Black")
