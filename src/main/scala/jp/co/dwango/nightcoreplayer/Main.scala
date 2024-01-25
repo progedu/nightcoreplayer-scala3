@@ -226,23 +226,26 @@ class Main extends Application:
     mediaView.setMediaPlayer(mediaPlayer)
     mediaPlayer.play()
 
-  private[this] def playPre(tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
+  sealed private trait Track
+  private object Pre extends Track
+  private object Next extends Track
+
+  private[this] def playAt(track: Track, tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
     val selectionModel = tableView.getSelectionModel
     if (selectionModel.isEmpty) return
     val index = selectionModel.getSelectedIndex
-    val preIndex = (tableView.getItems.size() + index - 1) % tableView.getItems.size()
-    selectionModel.select(preIndex)
+    val changedIndex = track match
+      case Pre => (tableView.getItems.size() + index - 1) % tableView.getItems.size()
+      case Next => (index + 1) % tableView.getItems.size()
+    selectionModel.select(changedIndex)
     val movie = selectionModel.getSelectedItem
     playMovie(movie, tableView, mediaView, timeLabel)
 
+  private[this] def playPre(tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
+    playAt(Pre, tableView, mediaView, timeLabel)
+
   private[this] def playNext(tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
-    val selectionModel = tableView.getSelectionModel
-    if (selectionModel.isEmpty) return
-    val index = selectionModel.getSelectedIndex
-    val nextIndex = (index + 1) % tableView.getItems.size()
-    selectionModel.select(nextIndex)
-    val movie = selectionModel.getSelectedItem
-    playMovie(movie, tableView, mediaView, timeLabel)
+    playAt(Next, tableView, mediaView, timeLabel)
 
   private[this] def formatTime(duration: Duration): String =
   "%02d:%02d:%02d".format(
