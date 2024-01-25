@@ -1,6 +1,5 @@
 package jp.co.dwango.nightcoreplayer
 
-import java.io.File
 import javafx.application.Application
 import javafx.beans.value.{ChangeListener, ObservableValue}
 import javafx.collections.FXCollections
@@ -12,8 +11,8 @@ import javafx.scene.control._
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.layout.{BorderPane, HBox}
 import javafx.scene.media.MediaPlayer.Status
-import javafx.scene.media.{Media, MediaPlayer, MediaView}
-import javafx.scene.input.{DragEvent, MouseEvent, TransferMode}
+import javafx.scene.media.{MediaPlayer, MediaView}
+import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.util.{Callback, Duration}
@@ -140,40 +139,9 @@ class Main extends Application:
     mediaView.fitWidthProperty().bind(scene.widthProperty().subtract(tableMinWidth))
     mediaView.fitHeightProperty().bind(scene.heightProperty().subtract(toolBarMinHeight))
 
-    scene.setOnDragOver(new EventHandler[DragEvent]() {
-      override def handle(event: DragEvent): Unit =
-        if (event.getGestureSource != scene &&
-          event.getDragboard.hasFiles) {
-          event.acceptTransferModes(TransferMode.COPY_OR_MOVE: _*)
-        }
-        event.consume()
-    })
+    scene.setOnDragOver(MovieFileDragOverEventHandler(scene))
 
-    scene.setOnDragDropped(new EventHandler[DragEvent]() {
-      override def handle(event: DragEvent): Unit =
-        val db = event.getDragboard
-        if (db.hasFiles) {
-          db.getFiles.toArray(Array[File]()).toSeq.foreach { f =>
-            val filePath = f.getAbsolutePath
-            val fileName = f.getName
-            val media = Media(f.toURI.toString)
-            val time = formatTime(media.getDuration)
-            val player = MediaPlayer(media)
-            player.setOnReady(new Runnable() {
-              override def run(): Unit = {
-                val time = formatTime(media.getDuration)
-                val movie = Movie(System.currentTimeMillis(), fileName, time, filePath, media)
-                while (movies.contains(movie)) {
-                  movie.setId(movie.getId + 1L)
-                }
-                movies.add(movie)
-                player.dispose()
-              }
-            })
-          }
-        }
-        event.consume()
-    })
+    scene.setOnDragDropped(MovieFileDragDroppedEventHandler(movies))
 
     primaryStage.setTitle("mp4ファイルをドラッグ&ドロップしてください")
 
@@ -246,12 +214,3 @@ class Main extends Application:
 
   private[this] def playNext(tableView: TableView[Movie], mediaView: MediaView, timeLabel: Label): Unit =
     playAt(Next, tableView, mediaView, timeLabel)
-
-  private[this] def formatTime(duration: Duration): String =
-  "%02d:%02d:%02d".format(
-    duration.toHours.toInt,
-    duration.toMinutes.toInt % 60,
-    duration.toSeconds.toInt % 60)
-
-  private[this] def formatTime(elapsed: Duration, duration: Duration): String =
-      s"${formatTime(elapsed)}/${formatTime(duration)}"
